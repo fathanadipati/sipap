@@ -1,0 +1,50 @@
+# Ignored files for AureliaBox
+
+# System files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# Composer
+vendor/
+composer.lock
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Log files
+*.log
+logs/
+
+# Cache
+cache/
+tmp/
+temp/
+
+# Database backups
+*.sql.bak
+*.sql.gz
+backups/
+
+# Configuration (if using custom)
+config/database.local.php
+
+# Node (if future frontend upgrade)
+node_modules/
+dist/
+build/
+
+# OS temp files
+$RECYCLE.BIN/
+.Thumbs.db
