@@ -168,6 +168,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                            value="<?php echo htmlspecialchars($penghuni['nomor_hp']); ?>" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
+                                    <label for="blok" class="form-label">Blok</label>
+                                    <input type="text" class="form-control" id="blok" name="blok" 
+                                           value="<?php echo htmlspecialchars($penghuni['blok'] ?? ''); ?>">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
                                     <label for="lantai" class="form-label">Lantai</label>
                                     <input type="number" class="form-control" id="lantai" name="lantai" 
                                            value="<?php echo htmlspecialchars($penghuni['lantai'] ?? ''); ?>">

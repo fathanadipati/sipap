@@ -1,0 +1,1110 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Generate Laporan Akhir AureliaBox dalam format DOCX
+ * Script ini membuat dokumen Word komprehensif dengan semua detail aplikasi
+ */
+
+error_reporting(0);
+
+// Create Word document with proper XML structure
+class DocxGenerator {
+    private $content = '';
+    
+    public function __construct() {
+        $this->content = '';
+    }
+    
+    public function addParagraph($text, $style = 'normal') {
+        $styleAttr = '';
+        if ($style === 'heading1') {
+            $styleAttr = ' style="heading1"';
+        } elseif ($style === 'heading2') {
+            $styleAttr = ' style="heading2"';
+        } elseif ($style === 'bold') {
+            $styleAttr = ' style="bold"';
+        }
+        
+        $this->content .= "<p$styleAttr>$text</p>\n";
+    }
+    
+    public function addTable($headers, $rows) {
+        $this->content .= "<table><tr>";
+        foreach ($headers as $header) {
+            $this->content .= "<th>$header</th>";
+        }
+        $this->content .= "</tr>";
+        
+        foreach ($rows as $row) {
+            $this->content .= "<tr>";
+            foreach ($row as $cell) {
+                $this->content .= "<td>$cell</td>";
+            }
+            $this->content .= "</tr>";
+        }
+        $this->content .= "</table>\n";
+    }
+    
+    public function addPageBreak() {
+        $this->content .= "<pagebreak/>\n";
+    }
+    
+    public function getContent() {
+        return $this->content;
+    }
+}
+
+// Create HTML version as fallback
+$html = '<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Akhir - AureliaBox Smart Package Management System</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body {
+            font-family: "Calibri", "Arial", sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 60px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .cover {
+            text-align: center;
+            padding: 100px 0;
+            border-bottom: 3px solid #003366;
+            margin-bottom: 50px;
+        }
+        .cover h1 {
+            font-size: 28px;
+            color: #003366;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .cover .app-name {
+            font-size: 48px;
+            font-weight: bold;
+            color: #003366;
+            margin: 20px 0;
+        }
+        .cover .subtitle {
+            font-size: 18px;
+            color: #0066CC;
+            font-style: italic;
+            margin: 20px 0 50px;
+        }
+        .info-table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+        }
+        .info-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .info-table td:first-child {
+            font-weight: bold;
+            width: 30%;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            font-size: 24px;
+            color: #003366;
+            margin: 30px 0 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0066CC;
+            page-break-after: avoid;
+        }
+        h2 {
+            font-size: 18px;
+            color: #0066CC;
+            margin: 25px 0 15px;
+            padding-left: 10px;
+            border-left: 4px solid #0066CC;
+            page-break-after: avoid;
+        }
+        h3 {
+            font-size: 14px;
+            color: #333;
+            margin: 15px 0 10px;
+            font-weight: bold;
+        }
+        p {
+            margin: 12px 0;
+            text-align: justify;
+            line-height: 1.8;
+        }
+        ul, ol {
+            margin: 15px 0 15px 30px;
+            line-height: 1.8;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .bold { font-weight: bold; }
+        .italic { font-style: italic; }
+        table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+            page-break-inside: avoid;
+        }
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        table th {
+            background-color: #003366;
+            color: white;
+            font-weight: bold;
+        }
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .toc {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-left: 4px solid #0066CC;
+        }
+        .toc ol {
+            margin: 10px 0 10px 30px;
+        }
+        .section-number {
+            color: #0066CC;
+            font-weight: bold;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .pagebreak {
+            page-break-after: always;
+            height: 0;
+        }
+        @media print {
+            body { background: white; }
+            .container { box-shadow: none; }
+            .pagebreak { display: block; }
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<!-- COVER PAGE -->
+<div class="cover">
+    <h1>Laporan Akhir Aplikasi</h1>
+    <div class="app-name">AureliaBox</div>
+    <div class="subtitle">Smart Package Management System</div>
+    
+    <table class="info-table">
+        <tr>
+            <td>Nama Proyek</td>
+            <td>AureliaBox - Smart Package Management System</td>
+        </tr>
+        <tr>
+            <td>Tanggal Laporan</td>
+            <td>' . date('d B Y') . '</td>
+        </tr>
+        <tr>
+            <td>Status</td>
+            <td>Production Ready</td>
+        </tr>
+        <tr>
+            <td>Versi</td>
+            <td>1.0</td>
+        </tr>
+    </table>
+</div>
+
+<div class="pagebreak"></div>
+
+<!-- DAFTAR ISI -->
+<h1>Daftar Isi</h1>
+<div class="toc">
+    <ol>
+        <li>Pendahuluan</li>
+        <li>Latar Belakang & Tujuan</li>
+        <li>Fitur Utama</li>
+        <li>Teknologi yang Digunakan</li>
+        <li>Rancangan Sistem</li>
+        <li>Struktur Database</li>
+        <li>Struktur Folder & File</li>
+        <li>Panduan Instalasi</li>
+        <li>Panduan Penggunaan</li>
+        <li>Keamanan Sistem</li>
+        <li>Kesimpulan</li>
+    </ol>
+</div>
+
+<div class="pagebreak"></div>
+
+<!-- 1. PENDAHULUAN -->
+<h1>1. Pendahuluan</h1>
+
+<p>AureliaBox adalah sebuah sistem manajemen paket yang dirancang khusus untuk mengelola alur pengiriman paket di apartemen premium. Sistem ini dikembangkan dengan tujuan memberikan solusi terpadu yang efisien dan user-friendly dalam menangani penerimaan, penyimpanan, dan pengambilan paket oleh penghuni.</p>
+
+<p>Dikembangkan khusus untuk <span class="bold">THE GRAND AURELIA RESIDENCE</span>, aplikasi ini memadukan teknologi modern dengan desain antarmuka yang intuitif untuk meningkatkan pengalaman pengguna dan efisiensi operasional.</p>
+
+<div class="pagebreak"></div>
+
+<!-- 2. LATAR BELAKANG & TUJUAN -->
+<h1>2. Latar Belakang & Tujuan</h1>
+
+<h2>2.1 Latar Belakang</h2>
+
+<p>Setiap hari, apartemen premium menerima ratusan paket dari berbagai ekspedisi. Sistem penerimaan paket yang manual atau tidak terstruktur sering kali menyebabkan:</p>
+
+<ul>
+    <li>Kesalahan pencatatan data paket</li>
+    <li>Penghuni tidak mengetahui jika paketnya sudah tiba</li>
+    <li>Kesulitan dalam melacak status paket</li>
+    <li>Inefisiensi waktu penerimaan dan pengambilan paket</li>
+    <li>Kurangnya dokumentasi yang baik untuk keperluan audit</li>
+</ul>
+
+<h2>2.2 Tujuan Pengembangan</h2>
+
+<ul>
+    <li>Menciptakan sistem manajemen paket yang terintegrasi dan efisien</li>
+    <li>Memberikan notifikasi real-time kepada penghuni saat paket tiba</li>
+    <li>Menyediakan dashboard monitoring untuk admin dan resepsionis</li>
+    <li>Mengotomatisasi proses penerimaan, penyimpanan, dan pengambilan paket</li>
+    <li>Menjaga keamanan data dan mengimplementasikan kontrol akses berbasis role</li>
+    <li>Memberikan user experience yang intuitif dan responsif</li>
+</ul>
+
+<div class="pagebreak"></div>
+
+<!-- 3. FITUR UTAMA -->
+<h1>3. Fitur Utama</h1>
+
+<h2>3.1 Sistem Autentikasi & Role Management</h2>
+<ul>
+    <li>Login dengan username dan password yang aman</li>
+    <li>Password hashing menggunakan bcrypt untuk keamanan maksimal</li>
+    <li>Session management yang robust dan aman</li>
+    <li>RBAC (Role-Based Access Control) dengan 3 role: Admin, Resepsionis, Penghuni</li>
+    <li>Proteksi akses langsung untuk halaman yang tidak tersedia</li>
+</ul>
+
+<h2>3.2 Dashboard</h2>
+<ul>
+    <li>Dashboard khusus untuk setiap role (Admin, Resepsionis, Penghuni)</li>
+    <li>Statistik paket real-time dengan visualisasi data</li>
+    <li>Quick access button ke fitur utama</li>
+    <li>Informasi ringkas yang relevan untuk setiap pengguna</li>
+    <li>Responsive design untuk semua ukuran layar</li>
+</ul>
+
+<h2>3.3 Manajemen Data Penghuni (Admin)</h2>
+<ul>
+    <li>CRUD lengkap untuk data penghuni</li>
+    <li>Penyimpanan informasi unit, kontak, dan kontak darurat</li>
+    <li>Integrasi otomatis dengan sistem akun pengguna</li>
+    <li>Validasi data yang ketat</li>
+    <li>Cascade delete untuk menjaga integritas data</li>
+</ul>
+
+<h2>3.4 Manajemen Paket (Admin & Resepsionis)</h2>
+<ul>
+    <li>Penerimaan paket baru dengan form lengkap</li>
+    <li>Pencatatan detail: kurir, ekspedisi, jenis paket, dan deskripsi</li>
+    <li>Auto-generate nomor paket unik dan otomatis</li>
+    <li>Penyimpanan paket ke loker dengan nomor unik</li>
+    <li>Update status paket: Diterima → Disimpan → Diambil</li>
+    <li>Filter dan pencarian paket yang powerful</li>
+    <li>Edit dan delete paket dengan konfirmasi</li>
+</ul>
+
+<h2>3.5 Sistem Notifikasi Real-Time</h2>
+<ul>
+    <li>Notifikasi otomatis terkirim ke penghuni saat paket tiba</li>
+    <li>Bell icon di navbar dengan badge counter</li>
+    <li>Daftar notifikasi dengan status baca/belum baca</li>
+    <li>Refresh real-time setiap 5 detik menggunakan AJAX</li>
+    <li>Mark as read/unread untuk setiap notifikasi</li>
+    <li>API endpoint untuk integrasi dengan sistem lain</li>
+</ul>
+
+<h2>3.6 Profil Pengguna</h2>
+<ul>
+    <li>Edit profil (nama, email)</li>
+    <li>Lihat informasi akun yang lengkap</li>
+    <li>Manajemen password</li>
+    <li>Update real-time ke database</li>
+</ul>
+
+<div class="pagebreak"></div>
+
+<!-- 4. TEKNOLOGI YANG DIGUNAKAN -->
+<h1>4. Teknologi yang Digunakan</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Komponen</th>
+            <th>Teknologi</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Backend</td>
+            <td>PHP 7.4+ (Native - Tanpa Framework)</td>
+        </tr>
+        <tr>
+            <td>Database</td>
+            <td>MySQL 5.7+</td>
+        </tr>
+        <tr>
+            <td>Frontend</td>
+            <td>HTML5, CSS3, Vanilla JavaScript</td>
+        </tr>
+        <tr>
+            <td>CSS Framework</td>
+            <td>Bootstrap 5</td>
+        </tr>
+        <tr>
+            <td>Icon</td>
+            <td>Bootstrap Icons</td>
+        </tr>
+        <tr>
+            <td>Server</td>
+            <td>Apache (XAMPP)</td>
+        </tr>
+        <tr>
+            <td>AJAX</td>
+            <td>Vanilla JavaScript + XMLHttpRequest</td>
+        </tr>
+        <tr>
+            <td>Password Hashing</td>
+            <td>bcrypt</td>
+        </tr>
+        <tr>
+            <td>Version Control</td>
+            <td>Git</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>4.1 Alasan Pemilihan Teknologi</h2>
+
+<p><span class="bold">PHP Native:</span> Lightweight, mudah di-deploy, tidak perlu dependency kompleks, cocok untuk XAMPP dan environment lokal.</p>
+
+<p><span class="bold">MySQL:</span> Reliable, widely used, support untuk relational database dengan foreign key dan integritas data.</p>
+
+<p><span class="bold">Bootstrap 5:</span> Modern UI components, responsive grid system, extensive documentation, dan community support yang besar.</p>
+
+<p><span class="bold">Vanilla JavaScript:</span> No dependencies, fast performance, native browser support untuk AJAX, tidak perlu build tools.</p>
+
+<p><span class="bold">Apache:</span> Standard web server, integrated dengan XAMPP, easy configuration, widely supported.</p>
+
+<div class="pagebreak"></div>
+
+<!-- 5. RANCANGAN SISTEM -->
+<h1>5. Rancangan Sistem</h1>
+
+<h2>5.1 Arsitektur Aplikasi</h2>
+
+<p>AureliaBox menggunakan arsitektur 3-Tier (Presentation-Business Logic-Data) yang klasik dan proven:</p>
+
+<ul>
+    <li><span class="bold">Presentation Layer (Frontend)</span>: HTML, CSS, JavaScript untuk user interface yang responsif dan user-friendly</li>
+    <li><span class="bold">Business Logic Layer (Backend)</span>: PHP files yang menghandle business logic, validasi, dan proses bisnis</li>
+    <li><span class="bold">Data Access Layer (Database)</span>: MySQL untuk persistent data storage dengan relasi yang jelas</li>
+</ul>
+
+<h2>5.2 Workflow Paket Masuk</h2>
+
+<p>Berikut adalah workflow lengkap saat paket masuk ke sistem:</p>
+
+<ol>
+    <li>Kurir datang dengan paket</li>
+    <li>Resepsionis klik menu "Terima Paket Baru"</li>
+    <li>Resepsionis mengisi form: nama pengirim, ekspedisi, jenis paket, deskripsi</li>
+    <li>Resepsionis memilih unit/penghuni penerima paket dari dropdown</li>
+    <li>Resepsionis memasukkan nomor loker tempat paket disimpan</li>
+    <li>Resepsionis klik tombol "Simpan"</li>
+    <li>Sistem auto-generate nomor paket unik</li>
+    <li>Database update dengan status "Disimpan"</li>
+    <li>Sistem otomatis mengirim notifikasi ke penghuni</li>
+    <li>Penghuni menerima notifikasi real-time di dashboard</li>
+    <li>Penghuni dapat melihat detail paket dan nomor lokernya</li>
+</ol>
+
+<h2>5.3 User Roles & Permissions</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Role</th>
+            <th>Permissions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><span class="bold">Admin</span></td>
+            <td>Manage users, manage residents, manage packages, view all data, access admin panel, generate reports</td>
+        </tr>
+        <tr>
+            <td><span class="bold">Resepsionis</span></td>
+            <td>Receive packages, manage packages (edit/delete), view resident data, view notifications, print reports</td>
+        </tr>
+        <tr>
+            <td><span class="bold">Penghuni</span></td>
+            <td>View own packages, view notifications, edit profile, view own data</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="pagebreak"></div>
+
+<!-- 6. STRUKTUR DATABASE -->
+<h1>6. Struktur Database</h1>
+
+<h2>6.1 Entity Relationship Diagram (Konsep)</h2>
+
+<p>Database terdiri dari 4 tabel utama yang saling berelasi untuk menyimpan data pengguna, penghuni, paket, dan notifikasi:</p>
+
+<h2>6.2 Tabel: users</h2>
+
+<p>Tabel ini menyimpan informasi pengguna sistem (Admin, Resepsionis, Penghuni)</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Field</th>
+            <th>Tipe</th>
+            <th>Keterangan</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>id</td>
+            <td>INT</td>
+            <td>Primary Key, Auto Increment</td>
+        </tr>
+        <tr>
+            <td>username</td>
+            <td>VARCHAR(50)</td>
+            <td>UNIQUE, untuk login</td>
+        </tr>
+        <tr>
+            <td>email</td>
+            <td>VARCHAR(100)</td>
+            <td>UNIQUE, email pengguna</td>
+        </tr>
+        <tr>
+            <td>password</td>
+            <td>VARCHAR(255)</td>
+            <td>Hashed dengan bcrypt</td>
+        </tr>
+        <tr>
+            <td>role</td>
+            <td>ENUM</td>
+            <td>admin, resepsionis, atau penghuni</td>
+        </tr>
+        <tr>
+            <td>nama_lengkap</td>
+            <td>VARCHAR(100)</td>
+            <td>Nama lengkap pengguna</td>
+        </tr>
+        <tr>
+            <td>is_active</td>
+            <td>BOOLEAN</td>
+            <td>Status aktif/nonaktif</td>
+        </tr>
+        <tr>
+            <td>created_at</td>
+            <td>TIMESTAMP</td>
+            <td>Waktu pembuatan record</td>
+        </tr>
+        <tr>
+            <td>updated_at</td>
+            <td>TIMESTAMP</td>
+            <td>Waktu update terakhir</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>6.3 Tabel: penghuni</h2>
+
+<p>Tabel ini menyimpan informasi penghuni apartemen beserta data kontak</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Field</th>
+            <th>Tipe</th>
+            <th>Keterangan</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>id</td>
+            <td>INT</td>
+            <td>Primary Key, Auto Increment</td>
+        </tr>
+        <tr>
+            <td>user_id</td>
+            <td>INT</td>
+            <td>Foreign Key ke tabel users</td>
+        </tr>
+        <tr>
+            <td>nomor_unit</td>
+            <td>VARCHAR(20)</td>
+            <td>UNIQUE, nomor unit apartemen</td>
+        </tr>
+        <tr>
+            <td>blok</td>
+            <td>VARCHAR(10)</td>
+            <td>Blok unit</td>
+        </tr>
+        <tr>
+            <td>lantai</td>
+            <td>INT</td>
+            <td>Lantai unit</td>
+        </tr>
+        <tr>
+            <td>nomor_hp</td>
+            <td>VARCHAR(15)</td>
+            <td>Nomor telepon penghuni</td>
+        </tr>
+        <tr>
+            <td>nama_kontak_darurat</td>
+            <td>VARCHAR(100)</td>
+            <td>Nama kontak darurat</td>
+        </tr>
+        <tr>
+            <td>nomor_kontak_darurat</td>
+            <td>VARCHAR(15)</td>
+            <td>Nomor kontak darurat</td>
+        </tr>
+        <tr>
+            <td>created_at</td>
+            <td>TIMESTAMP</td>
+            <td>Waktu pembuatan record</td>
+        </tr>
+        <tr>
+            <td>updated_at</td>
+            <td>TIMESTAMP</td>
+            <td>Waktu update terakhir</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>6.4 Tabel: paket</h2>
+
+<p>Tabel ini menyimpan informasi paket yang masuk ke sistem</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Field</th>
+            <th>Tipe</th>
+            <th>Keterangan</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>id</td>
+            <td>INT</td>
+            <td>Primary Key, Auto Increment</td>
+        </tr>
+        <tr>
+            <td>nomor_paket</td>
+            <td>VARCHAR(50)</td>
+            <td>UNIQUE, auto-generated identifier</td>
+        </tr>
+        <tr>
+            <td>penghuni_id</td>
+            <td>INT</td>
+            <td>Foreign Key ke tabel penghuni</td>
+        </tr>
+        <tr>
+            <td>nama_pengirim</td>
+            <td>VARCHAR(100)</td>
+            <td>Nama pengirim paket</td>
+        </tr>
+        <tr>
+            <td>nama_kurir</td>
+            <td>VARCHAR(100)</td>
+            <td>Nama kurir yang mengantarkan</td>
+        </tr>
+        <tr>
+            <td>nama_ekspedisi</td>
+            <td>VARCHAR(100)</td>
+            <td>Nama perusahaan ekspedisi</td>
+        </tr>
+        <tr>
+            <td>jenis_paket</td>
+            <td>VARCHAR(50)</td>
+            <td>Kategori paket</td>
+        </tr>
+        <tr>
+            <td>deskripsi</td>
+            <td>TEXT</td>
+            <td>Deskripsi isi paket</td>
+        </tr>
+        <tr>
+            <td>nomor_loker</td>
+            <td>VARCHAR(20)</td>
+            <td>Nomor loker penyimpanan</td>
+        </tr>
+        <tr>
+            <td>status</td>
+            <td>ENUM</td>
+            <td>diterima, disimpan, atau diambil</td>
+        </tr>
+        <tr>
+            <td>resepsionis_id</td>
+            <td>INT</td>
+            <td>Foreign Key ke user (resepsionis)</td>
+        </tr>
+        <tr>
+            <td>tanggal_terima</td>
+            <td>DATETIME</td>
+            <td>Waktu paket diterima</td>
+        </tr>
+        <tr>
+            <td>tanggal_diambil</td>
+            <td>DATETIME</td>
+            <td>Waktu paket diambil (nullable)</td>
+        </tr>
+        <tr>
+            <td>catatan</td>
+            <td>TEXT</td>
+            <td>Catatan tambahan</td>
+        </tr>
+        <tr>
+            <td>created_at</td>
+            <td>TIMESTAMP</td>
+            <td>Waktu pembuatan record</td>
+        </tr>
+        <tr>
+            <td>updated_at</td>
+            <td>TIMESTAMP</td>
+            <td>Waktu update terakhir</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>6.5 Tabel: notifikasi</h2>
+
+<p>Tabel ini menyimpan notifikasi untuk penghuni tentang paket mereka</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Field</th>
+            <th>Tipe</th>
+            <th>Keterangan</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>id</td>
+            <td>INT</td>
+            <td>Primary Key, Auto Increment</td>
+        </tr>
+        <tr>
+            <td>penghuni_id</td>
+            <td>INT</td>
+            <td>Foreign Key ke tabel penghuni</td>
+        </tr>
+        <tr>
+            <td>paket_id</td>
+            <td>INT</td>
+            <td>Foreign Key ke tabel paket</td>
+        </tr>
+        <tr>
+            <td>pesan</td>
+            <td>TEXT</td>
+            <td>Isi pesan notifikasi</td>
+        </tr>
+        <tr>
+            <td>is_read</td>
+            <td>BOOLEAN</td>
+            <td>Status baca/belum baca</td>
+        </tr>
+        <tr>
+            <td>created_at</td>
+            <td>TIMESTAMP</td>
+            <td>Waktu notifikasi dibuat</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="pagebreak"></div>
+
+<!-- 7. STRUKTUR FOLDER & FILE -->
+<h1>7. Struktur Folder & File</h1>
+
+<p>Aplikasi terorganisir dalam struktur folder yang jelas dan mudah dipahami untuk memudahkan maintenance dan development:</p>
+
+<h2>7.1 Root Level Files</h2>
+
+<ul>
+    <li><span class="bold">index.php</span> - Halaman utama/landing page</li>
+    <li><span class="bold">login.php</span> - Halaman login pengguna</li>
+    <li><span class="bold">logout.php</span> - Script proses logout</li>
+    <li><span class="bold">dashboard.php</span> - Dashboard utama setelah login</li>
+    <li><span class="bold">profile.php</span> - Halaman profil pengguna</li>
+    <li><span class="bold">forbidden.php</span> - Halaman error 403 (akses terlarang)</li>
+    <li><span class="bold">database.sql</span> - Database schema dan data awal</li>
+</ul>
+
+<h2>7.2 Folder Utama</h2>
+
+<h3>📁 config/</h3>
+<ul>
+    <li>database.php - Konfigurasi koneksi MySQL</li>
+    <li>session.php - Session management & autentikasi</li>
+    <li>pagination.php - Konfigurasi pagination</li>
+</ul>
+
+<h3>📁 includes/</h3>
+<ul>
+    <li>header.php - Header template</li>
+    <li>navbar.php - Navigation bar</li>
+    <li>footer.php - Footer template</li>
+</ul>
+
+<h3>📁 modules/</h3>
+<ul>
+    <li>penghuni/ - Modul manajemen data penghuni (CRUD)</li>
+    <li>paket/ - Modul manajemen paket (CRUD)</li>
+    <li>notifikasi/ - Modul sistem notifikasi real-time</li>
+</ul>
+
+<h3>📁 admin/</h3>
+<ul>
+    <li>index.php - Admin panel utama</li>
+    <li>users.php - Daftar pengguna</li>
+    <li>users_add.php - Tambah pengguna</li>
+    <li>users_edit.php - Edit pengguna</li>
+    <li>users_delete.php - Hapus pengguna</li>
+</ul>
+
+<h3>📁 assets/</h3>
+<ul>
+    <li>css/style.css - Stylesheet custom</li>
+    <li>js/script.js - JavaScript custom (AJAX, validasi)</li>
+    <li>images/ - Folder untuk gambar dan logo</li>
+</ul>
+
+<h3>📁 api/</h3>
+<ul>
+    <li>get-occupied-lokers.php - API endpoint untuk loker terisi</li>
+</ul>
+
+<h2>7.3 Total File Organization</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Tipe File</th>
+            <th>Jumlah</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>PHP Files</td>
+            <td>25+</td>
+        </tr>
+        <tr>
+            <td>Config Files</td>
+            <td>3</td>
+        </tr>
+        <tr>
+            <td>Template Files</td>
+            <td>3</td>
+        </tr>
+        <tr>
+            <td>CSS Files</td>
+            <td>1</td>
+        </tr>
+        <tr>
+            <td>JavaScript Files</td>
+            <td>1</td>
+        </tr>
+        <tr>
+            <td>SQL Files</td>
+            <td>1</td>
+        </tr>
+        <tr>
+            <td>Documentation Files</td>
+            <td>10+</td>
+        </tr>
+        <tr>
+            <td><span class="bold">Total</span></td>
+            <td><span class="bold">50+</span></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="pagebreak"></div>
+
+<!-- 8. PANDUAN INSTALASI -->
+<h1>8. Panduan Instalasi</h1>
+
+<h2>8.1 Prasyarat (Requirements)</h2>
+
+<ul>
+    <li>XAMPP (Apache + MySQL + PHP) versi terbaru</li>
+    <li>PHP 7.4 atau lebih tinggi</li>
+    <li>MySQL 5.7 atau lebih tinggi</li>
+    <li>Text Editor atau IDE (VS Code, PhpStorm, Sublime Text, dll)</li>
+    <li>Browser modern (Chrome, Firefox, Edge, Safari)</li>
+    <li>Koneksi internet untuk download XAMPP (jika belum ada)</li>
+</ul>
+
+<h2>8.2 Langkah Instalasi</h2>
+
+<p><span class="bold">1. Ekstrak file:</span> Ekstrak folder "sipap" ke dalam folder "C:\\xampp\\htdocs\\"</p>
+
+<p><span class="bold">2. Start XAMPP:</span> Buka XAMPP Control Panel dan start Apache dan MySQL</p>
+
+<p><span class="bold">3. Import Database:</span> Buka phpMyAdmin (http://localhost/phpmyadmin), buat database baru "sipap_db", lalu import file "database.sql"</p>
+
+<p><span class="bold">4. Akses Aplikasi:</span> Buka browser dan ketik: http://localhost/sipap</p>
+
+<p><span class="bold">5. Login:</span> Gunakan kredensial default untuk login sebagai admin</p>
+
+<h2>8.3 Kredensial Default</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Role</th>
+            <th>Username</th>
+            <th>Password</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Admin</td>
+            <td>admin</td>
+            <td>admin123</td>
+        </tr>
+        <tr>
+            <td>Resepsionis</td>
+            <td>resepsionis</td>
+            <td>resepsionis123</td>
+        </tr>
+        <tr>
+            <td>Penghuni</td>
+            <td>penghuni1</td>
+            <td>penghuni123</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="warning">
+    <span class="bold">⚠️ Penting:</span> Ganti semua password default setelah instalasi berhasil!
+</div>
+
+<div class="pagebreak"></div>
+
+<!-- 9. PANDUAN PENGGUNAAN -->
+<h1>9. Panduan Penggunaan</h1>
+
+<h2>9.1 Untuk Admin</h2>
+
+<ol>
+    <li>Login ke sistem menggunakan akun admin</li>
+    <li>Akses Admin Panel dari menu dropdown profil di navbar</li>
+    <li>Kelola pengguna: tambah, edit, hapus pengguna</li>
+    <li>Kelola data penghuni: tambah, edit, hapus penghuni</li>
+    <li>Monitor semua paket yang masuk dan keluar dari sistem</li>
+    <li>Lihat statistik dan ringkasan di dashboard</li>
+    <li>Buat dan export laporan data</li>
+</ol>
+
+<h2>9.2 Untuk Resepsionis</h2>
+
+<ol>
+    <li>Login ke sistem menggunakan akun resepsionis</li>
+    <li>Klik "Terima Paket Baru" saat kurir datang dengan paket</li>
+    <li>Isi form dengan detail paket (pengirim, ekspedisi, jenis paket, deskripsi)</li>
+    <li>Pilih unit/penghuni penerima dari dropdown yang tersedia</li>
+    <li>Masukkan nomor loker tempat menyimpan paket</li>
+    <li>Klik tombol "Simpan" untuk mencatat paket</li>
+    <li>Sistem otomatis mengirim notifikasi ke penghuni</li>
+    <li>Monitor paket yang sedang disimpan di loker</li>
+    <li>Update status ketika penghuni mengambil paket</li>
+</ol>
+
+<h2>9.3 Untuk Penghuni</h2>
+
+<ol>
+    <li>Login ke sistem menggunakan akun penghuni</li>
+    <li>Lihat notifikasi bell icon di navbar untuk paket baru yang tiba</li>
+    <li>Klik notifikasi untuk melihat detail paket lengkap dan nomor lokernya</li>
+    <li>Ambil paket dari loker sesuai nomor yang diberikan di notifikasi</li>
+    <li>Edit profil jika ingin update data pribadi atau kontak</li>
+    <li>Lihat riwayat paket yang sudah diambil di akun pribadi</li>
+</ol>
+
+<div class="pagebreak"></div>
+
+<!-- 10. KEAMANAN SISTEM -->
+<h1>10. Keamanan Sistem</h1>
+
+<h2>10.1 Implementasi Keamanan</h2>
+
+<h3>Password Hashing</h3>
+<ul>
+    <li>Menggunakan bcrypt untuk hashing password yang aman</li>
+    <li>Password tidak pernah disimpan dalam plain text</li>
+    <li>Salt otomatis pada setiap hash untuk security tambahan</li>
+    <li>Algorithm cost factor yang optimal untuk keamanan dan performa</li>
+</ul>
+
+<h3>SQL Injection Prevention</h3>
+<ul>
+    <li>Menggunakan prepared statements dengan parameterized queries</li>
+    <li>Input validation di semua form sebelum dikirim ke database</li>
+    <li>Sanitasi data sebelum dimasukkan ke database</li>
+    <li>Escape special characters dengan proper escaping functions</li>
+</ul>
+
+<h3>XSS (Cross-Site Scripting) Prevention</h3>
+<ul>
+    <li>Output encoding untuk semua user input yang ditampilkan</li>
+    <li>Htmlspecialchars() untuk mencegah script injection</li>
+    <li>Content Security Policy ready untuk HTTP headers</li>
+    <li>Input sanitasi untuk form fields</li>
+</ul>
+
+<h3>Session Management</h3>
+<ul>
+    <li>Session timeout configuration untuk security</li>
+    <li>Unique session ID untuk setiap user login</li>
+    <li>Session data disimpan di server, bukan di client</li>
+    <li>Regenerate session ID setelah login berhasil</li>
+    <li>Proper session destroy pada logout</li>
+</ul>
+
+<h3>Access Control</h3>
+<ul>
+    <li>RBAC (Role-Based Access Control) dengan 3 role yang jelas</li>
+    <li>Direct access protection untuk halaman admin</li>
+    <li>Permission check di setiap halaman yang restricted</li>
+    <li>403 Forbidden page untuk akses terlarang yang dideteksi</li>
+    <li>Logging untuk attempted unauthorized access</li>
+</ul>
+
+<h3>Data Validation</h3>
+<ul>
+    <li>Server-side validation di semua form submission</li>
+    <li>Input length checking untuk mencegah buffer overflow</li>
+    <li>Data type validation (email, phone, numeric, dll)</li>
+    <li>Required field validation untuk data penting</li>
+    <li>Custom validation rules sesuai business logic</li>
+</ul>
+
+<h2>10.2 Best Practices yang Diikuti</h2>
+
+<ul>
+    <li><span class="bold">Never trust user input</span> - selalu validasi dan sanitasi semua input dari user</li>
+    <li><span class="bold">Principle of Least Privilege</span> - users hanya dapat akses fitur yang mereka butuhkan</li>
+    <li><span class="bold">Error handling</span> - error tidak mengungkap detail teknis sistem</li>
+    <li><span class="bold">Logging</span> - logging untuk audit trail dan troubleshooting</li>
+    <li><span class="bold">Regular backup</span> - backup database secara berkala</li>
+    <li><span class="bold">HTTPS ready</span> - saat hosting ke server, gunakan SSL certificate</li>
+    <li><span class="bold">Security headers</span> - proper HTTP security headers implementation</li>
+    <li><span class="bold">Input/Output encoding</span> - proper encoding untuk semua data</li>
+</ul>
+
+<div class="pagebreak"></div>
+
+<!-- 11. KESIMPULAN -->
+<h1>11. Kesimpulan</h1>
+
+<p>AureliaBox adalah solusi lengkap untuk manajemen paket apartemen premium yang modern, efisien, dan user-friendly. Dengan implementasi teknologi terkini dan best practices dalam web development, aplikasi ini telah berhasil mencapai semua tujuan yang ditetapkan.</p>
+
+<h2>11.1 Pencapaian</h2>
+
+<ul>
+    <li>✅ Sistem manajemen paket terintegrasi dan lengkap</li>
+    <li>✅ 3 role dengan permission control yang tepat</li>
+    <li>✅ Notifikasi real-time kepada penghuni</li>
+    <li>✅ Dashboard monitoring untuk semua role</li>
+    <li>✅ Keamanan tingkat enterprise</li>
+    <li>✅ User interface yang responsive dan intuitif</li>
+    <li>✅ Database yang terstruktur dengan baik</li>
+    <li>✅ Dokumentasi lengkap dan mudah dipahami</li>
+    <li>✅ Production ready dan siap di-deploy</li>
+    <li>✅ Testing dan quality assurance sudah dilakukan</li>
+</ul>
+
+<h2>11.2 Rekomendasi ke Depan</h2>
+
+<ul>
+    <li>Implementasi Two-Factor Authentication (2FA) untuk keamanan tambahan</li>
+    <li>Penambahan fitur reporting dan analytics yang lebih mendalam</li>
+    <li>Integrasi dengan sistem paging atau SMS notification</li>
+    <li>Mobile app native untuk penghuni (iOS & Android)</li>
+    <li>Implementasi real-time notification dengan WebSocket</li>
+    <li>Integrasi dengan payment gateway untuk layanan tambahan</li>
+    <li>Automation dengan background jobs untuk tugas periodik</li>
+    <li>Monitoring dan logging dengan tools seperti ELK Stack</li>
+</ul>
+
+<h2>11.3 Catatan Akhir</h2>
+
+<p>Aplikasi AureliaBox telah dikembangkan dengan standar profesional dan siap untuk deployment ke environment production. Semua fitur telah diuji dan berjalan dengan baik. Tim dapat melanjutkan dengan fase hosting dan deployment ke server production dengan percaya diri.</p>
+
+<p>Laporan ini dibuat pada: <span class="bold">' . date('d B Y pukul H:i:s') . '</span></p>
+
+<div class="footer">
+    <p>&copy; 2025 AureliaBox Smart Package Management System. All rights reserved.</p>
+    <p>Laporan Akhir Aplikasi - Production Ready</p>
+</div>
+
+</div>
+</body>
+</html>';
+
+// Save HTML file
+$output_file = __DIR__ . '/LAPORAN_AKHIR_AureliaBox.html';
+file_put_contents($output_file, $html);
+
+echo "✅ Laporan HTML berhasil dibuat di: " . $output_file . "\n";
+echo "📄 File: LAPORAN_AKHIR_AureliaBox.html\n";
+echo "\nAnda dapat membuka file ini di browser untuk melihat isinya.\n";
+echo "Untuk mengkonversi ke format Word (.docx), Anda bisa:\n";
+echo "1. Buka file HTML di Microsoft Word\n";
+echo "2. Gunakan 'Save As' dan pilih format Word (.docx)\n";
+echo "3. Atau gunakan online converter seperti CloudConvert\n";
+
+?>

@@ -16,5 +16,8 @@ if ($conn->connect_error) {
 // Set charset
 $conn->set_charset("utf8");
 
+// Set timezone to Asia/Jakarta
+date_default_timezone_set('Asia/Jakarta');
+
 // Return connection
 ?>
